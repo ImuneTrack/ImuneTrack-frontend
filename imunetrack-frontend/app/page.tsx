@@ -11,7 +11,7 @@ export default function HomePage() {
         <div className="container mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Shield className="h-8 w-8 text-primary" />
-            <h1 className="text-2xl font-bold text-balance">VacinaBem</h1>
+            <h1 className="text-2xl font-bold text-balance">Imunetrack</h1>
           </div>
           <Link href="/login">
             <Button variant="outline" size="sm" className="gap-2 bg-transparent">
@@ -306,7 +306,7 @@ export default function HomePage() {
       {/* Footer */}
       <footer className="border-t py-8">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>© 2025 VacinaBem. Todos os direitos reservados.</p>
+          <p>© 2025 Imunetrack. Todos os direitos reservados.</p>
           <p className="mt-2">
             As informações sobre vacinas são baseadas no Calendário Nacional de Vacinação do Ministério da Saúde.
           </p>

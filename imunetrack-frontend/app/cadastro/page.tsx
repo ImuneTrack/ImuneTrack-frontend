@@ -81,7 +81,7 @@ export default function CadastroPage() {
               <Shield className="h-12 w-12 text-primary" />
             </div>
             <CardTitle className="text-2xl">Criar sua conta</CardTitle>
-            <CardDescription>Preencha os dados abaixo para começar a usar o VacinaBem</CardDescription>
+            <CardDescription>Preencha os dados abaixo para começar a usar o Imunetrack</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSignup} className="space-y-4">

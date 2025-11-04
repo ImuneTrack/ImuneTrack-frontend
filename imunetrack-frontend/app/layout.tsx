@@ -7,7 +7,7 @@ import { Suspense } from "react"
 import "./globals.css"
 
 export const metadata: Metadata = {
-  title: "VacinaBem - Seu Calendário de Vacinação",
+  title: "Imunetrack - Seu Calendário de Vacinação",
   description: "Acompanhe seu calendário de vacinação e mantenha sua saúde em dia",
   generator: "v0.app",
 }
