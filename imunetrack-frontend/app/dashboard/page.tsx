@@ -173,7 +173,7 @@ export default function DashboardPage() {
                       <CardDescription>Datas programadas para suas vacinas</CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <VaccineCalendar />
+                      <VaccineCalendar usuarioId={usuarioId}/>
                     </CardContent>
                   </Card>
                 </div>
