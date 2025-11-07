@@ -1,6 +1,6 @@
 "use client"
 import { Button } from "@/components/ui/button"
-import { Calendar, Plus, Home, History, Settings } from "lucide-react"
+import { Calendar, Plus, Home, History, Settings, Shield } from "lucide-react" // adicionei Shield
 import { cn } from "@/lib/utils"
 
 interface SidebarProps {
@@ -27,12 +27,6 @@ export function Sidebar({ activeTab, onTabChange, onSettingsOpen, isAdmin }: Sid
       label: "Histórico",
       icon: History,
     },
-    // Aba de gerenciamento de vacinas só para admins
-    ...(isAdmin ? [{
-      id: "manage-vaccines",
-      label: "Gerenciar Vacinas",
-      icon: Plus, // você pode trocar por outro ícone, tipo Calendar ou Shield
-    }] : []),
   ]
 
   return (
@@ -63,6 +57,22 @@ export function Sidebar({ activeTab, onTabChange, onSettingsOpen, isAdmin }: Sid
             </button>
           )
         })}
+
+        {/* Botão admin só aparece se isAdmin for true */}
+        {isAdmin && (
+          <button
+            onClick={() => onTabChange("admin")}
+            className={cn(
+              "w-full flex items-center gap-3 px-4 py-3 rounded-lg transition-colors text-left",
+              activeTab === "admin"
+                ? "bg-primary/10 text-primary font-medium"
+                : "text-red-500 hover:bg-accent/5 hover:text-foreground"
+            )}
+          >
+            <Shield className="h-5 w-5" />
+            <span>Área do Admin</span>
+          </button>
+        )}
       </nav>
 
       <div className="absolute bottom-6 left-6 right-6">

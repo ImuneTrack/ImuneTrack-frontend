@@ -41,7 +41,17 @@ export default function LoginPage() {
 
     try {
       // Faz login na API
-      await authService.login(email, password)
+      const usuario = await authService.login(email, password)
+
+      localStorage.setItem(
+        "user",
+        JSON.stringify({
+        id: usuario.id,
+        name: usuario.nome,      // ou usuario.name se o backend devolver assim
+        email: usuario.email,
+        isAdmin: usuario.is_admin // <- aqui vem do backend
+        })
+      )
 
       toast({
         title: "Login realizado com sucesso!",

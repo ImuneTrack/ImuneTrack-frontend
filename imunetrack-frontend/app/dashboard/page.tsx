@@ -11,11 +11,13 @@ import { Sidebar } from "@/components/ui/sidebar"
 import { VaccineScheduleForm } from "@/components/ui/vaccine-schedule-form"
 import { SettingsModal } from "@/components/ui/settings-modal"
 import { historicoService, type Estatisticas } from "@/services/api"
+import { AdminPanel } from "@/components/ui/user-list"
 
 interface User {
   email: string
   name: string
   id: string | number
+  isAdmin?: boolean
 }
 
 export default function DashboardPage() {
@@ -71,7 +73,7 @@ export default function DashboardPage() {
 
   return (
     <div className="min-h-screen bg-secondary/30 flex">
-      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} onSettingsOpen={() => setIsSettingsOpen(true)} />
+      <Sidebar activeTab={activeTab} onTabChange={setActiveTab} onSettingsOpen={() => setIsSettingsOpen(true)} isAdmin={user.isAdmin} />
 
       <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} user={user} />
 
@@ -211,6 +213,26 @@ export default function DashboardPage() {
                 </CardContent>
               </Card>
             </>
+          )}
+
+          {/* Admin View */}
+          {activeTab === "admin" && user.isAdmin && (
+            <div className="max-w-4xl">
+              <div className="mb-8">
+                <h2 className="text-3xl font-bold mb-2">Área do Administrador</h2>
+                <p className="text-muted-foreground">Gerencie usuários, vacinas e outras configurações.</p>
+              </div>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Gerenciamento</CardTitle>
+                  <CardDescription>Dados cadastrados no sistema</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <AdminPanel />
+                </CardContent>
+              </Card>
+            </div>
           )}
         </main>
       </div>
