@@ -1,126 +1,145 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { usuarioService, vacinaService, Usuario, Vacina } from "@/services/api"
+import { Pencil, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import api from "@/services/api"
 
-export function AdminPanel() {
-  const [userList, setUserList] = useState<Usuario[]>([])
-  const [vacinaList, setVacinaList] = useState<Vacina[]>([])
-  const [loadingUsers, setLoadingUsers] = useState(true)
-  const [loadingVacinas, setLoadingVacinas] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+interface User {
+  id: number
+  nome: string
+  email: string
+  senha: string
+  is_admin: boolean
+}
 
-  // ================= USERS =================
+export default function UserList() {
+  const [users, setUsers] = useState<User[]>([])
+  const [editingUser, setEditingUser] = useState<User | null>(null)
+
   useEffect(() => {
     async function fetchUsers() {
       try {
-        setLoadingUsers(true)
-        const data = await usuarioService.listarTodos()
-        setUserList(data)
-      } catch (err) {
-        console.error(err)
-        setError("Erro ao buscar usuários")
-      } finally {
-        setLoadingUsers(false)
+        const response = await api.get("/usuarios/")
+        setUsers(response.data)
+      } catch (error) {
+        console.error("Erro ao buscar usuários:", error)
       }
     }
-
     fetchUsers()
   }, [])
 
-  const toggleAdmin = async (user: Usuario) => {
-    try {
-      const updated = await usuarioService.atualizar(user.id, {
-        is_admin: !user.is_admin,
-      })
-      setUserList((prev) =>
-        prev.map((u) => (u.id === user.id ? updated : u))
-      )
-    } catch (err) {
-      console.error(err)
-      setError("Erro ao atualizar usuário")
-    }
+  const handleEdit = (user: User) => setEditingUser(user)
+  const handleDelete = async (id: number) => {
+    await api.delete(`/usuarios/${id}/`)
+    setUsers((prev) => prev.filter((u) => u.id !== id))
   }
 
-  const deleteUser = async (userId: number) => {
-    try {
-      await usuarioService.deletar(userId)
-      setUserList((prev) => prev.filter((u) => u.id !== userId))
-    } catch (err) {
-      console.error(err)
-      setError("Erro ao deletar usuário")
-    }
+  const handleSave = async () => {
+    if (!editingUser) return
+    await api.put(`/usuarios/${editingUser.id}/`, editingUser)
+    setUsers((prev) =>
+      prev.map((u) => (u.id === editingUser.id ? editingUser : u))
+    )
+    setEditingUser(null)
   }
-
-  // ================= VACINAS =================
-  useEffect(() => {
-    async function fetchVacinas() {
-      try {
-        setLoadingVacinas(true)
-        const data = await vacinaService.listarTodas()
-        setVacinaList(data)
-      } catch (err) {
-        console.error(err)
-        setError("Erro ao buscar vacinas")
-      } finally {
-        setLoadingVacinas(false)
-      }
-    }
-
-    fetchVacinas()
-  }, [])
-
-  const deleteVacina = async (vacinaId: number) => {
-    try {
-      await vacinaService.deletar(vacinaId)
-      setVacinaList((prev) => prev.filter((v) => v.id !== vacinaId))
-    } catch (err) {
-      console.error(err)
-      setError("Erro ao deletar vacina")
-    }
-  }
-
-  const criarVacina = async () => {
-    const nome = prompt("Nome da vacina:")
-    const dosesStr = prompt("Número de doses:")
-    if (!nome || !dosesStr) return
-    const doses = parseInt(dosesStr, 10)
-    try {
-      const nova = await vacinaService.criar({ nome, doses })
-      setVacinaList((prev) => [...prev, nova])
-    } catch (err) {
-      console.error(err)
-      setError("Erro ao criar vacina")
-    }
-  }
-
-  if (loadingUsers || loadingVacinas) return <p>Carregando...</p>
-  if (error) return <p>{error}</p>
 
   return (
-    <div>
-      <h2>Lista de Usuários</h2>
-      <ul>
-        {userList.map((user) => (
-          <li key={user.id}>
-            {user.nome} ({user.email}) - Admin: {user.is_admin ? "Sim" : "Não"}
-            <Button onClick={() => toggleAdmin(user)}>Alterar Admin</Button>
-            <Button onClick={() => deleteUser(user.id)}>Deletar</Button>
-          </li>
-        ))}
-      </ul>
+    <div className="max-w-4xl mx-auto p-4 space-y-8">
+      <h1 className="text-2xl font-bold">Gerenciar Usuários</h1>
 
-      <h2 className="mt-6">Lista de Vacinas</h2>
-      <Button onClick={criarVacina} className="mb-2">Adicionar Vacina</Button>
-      <ul>
-        {vacinaList.map((vacina) => (
-          <li key={vacina.id}>
-            {vacina.nome} - Doses: {vacina.doses}
-            <Button onClick={() => deleteVacina(vacina.id)}>Deletar</Button>
-          </li>
-        ))}
-      </ul>
+    <div className="space-y-4">
+      {users.map((user) => (
+        <Card key={user.id}>
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle>{user.nome}</CardTitle>
+            <div className="flex gap-2">
+              <Button variant="outline" size="icon" onClick={() => handleEdit(user)}>
+                <Pencil className="h-4 w-4" />
+              </Button>
+              <Button variant="destructive" size="icon" onClick={() => handleDelete(user.id)}>
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p>Id: {user.id}</p>
+            <p>{user.email}</p>
+            <p className="text-sm text-muted-foreground">
+              {user.is_admin ? "Administrador" : "Usuário comum"}
+            </p>
+          </CardContent>
+        </Card>
+      ))}
+    </div>
+
+      {/* Modal de Edição */}
+      <Dialog open={!!editingUser} onOpenChange={() => setEditingUser(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Editar Usuário</DialogTitle>
+          </DialogHeader>
+
+          <div className="space-y-4">
+            <div>
+              <Label>Nome</Label>
+              <Input
+                value={editingUser?.nome || ""}
+                onChange={(e) =>
+                  setEditingUser({ ...editingUser!, nome: e.target.value })
+                }
+              />
+            </div>
+
+            <div>
+              <Label>Email</Label>
+              <Input
+                type="email"
+                value={editingUser?.email || ""}
+                onChange={(e) =>
+                  setEditingUser({ ...editingUser!, email: e.target.value })
+                }
+              />
+            </div>
+            
+            <div>
+              <Label>Senha</Label>
+              <Input
+                type="password"
+                placeholder="••••••••"
+                onChange={(e) =>
+                  setEditingUser({ ...editingUser!, senha: e.target.value })
+                }
+              />
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                checked={editingUser?.is_admin|| false}
+                onChange={(e) =>
+                  setEditingUser({
+                    ...editingUser!,
+                    is_admin: e.target.checked,
+                  })
+                }
+              />
+              <Label>Administrador?</Label>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingUser(null)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleSave}>Salvar</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

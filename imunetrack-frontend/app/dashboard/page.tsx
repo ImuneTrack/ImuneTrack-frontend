@@ -11,7 +11,7 @@ import { Sidebar } from "@/components/ui/sidebar"
 import { VaccineScheduleForm } from "@/components/ui/vaccine-schedule-form"
 import { SettingsModal } from "@/components/ui/settings-modal"
 import { historicoService, type Estatisticas } from "@/services/api"
-import { AdminPanel } from "@/components/ui/user-list"
+import UserList from "@/components/ui/user-list"
 
 interface User {
   email: string
@@ -229,7 +229,7 @@ export default function DashboardPage() {
                   <CardDescription>Dados cadastrados no sistema</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <AdminPanel />
+                  <UserList />
                 </CardContent>
               </Card>
             </div>
