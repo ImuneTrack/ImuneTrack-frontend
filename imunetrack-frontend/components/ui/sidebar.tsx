@@ -7,9 +7,10 @@ interface SidebarProps {
   activeTab: string
   onTabChange: (tab: string) => void
   onSettingsOpen: () => void
+  isAdmin?: boolean
 }
 
-export function Sidebar({ activeTab, onTabChange, onSettingsOpen }: SidebarProps) {
+export function Sidebar({ activeTab, onTabChange, onSettingsOpen, isAdmin }: SidebarProps) {
   const menuItems = [
     {
       id: "dashboard",
@@ -26,6 +27,12 @@ export function Sidebar({ activeTab, onTabChange, onSettingsOpen }: SidebarProps
       label: "Histórico",
       icon: History,
     },
+    // Aba de gerenciamento de vacinas só para admins
+    ...(isAdmin ? [{
+      id: "manage-vaccines",
+      label: "Gerenciar Vacinas",
+      icon: Plus, // você pode trocar por outro ícone, tipo Calendar ou Shield
+    }] : []),
   ]
 
   return (

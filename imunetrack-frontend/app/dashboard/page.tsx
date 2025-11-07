@@ -10,17 +10,20 @@ import { VaccineList } from "@/components/ui/vaccine-list"
 import { Sidebar } from "@/components/ui/sidebar"
 import { VaccineScheduleForm } from "@/components/ui/vaccine-schedule-form"
 import { SettingsModal } from "@/components/ui/settings-modal"
+import { historicoService, type Estatisticas } from "@/services/api"
 
 interface User {
   email: string
   name: string
-  id: string
+  id: string | number
 }
 
 export default function DashboardPage() {
   const [user, setUser] = useState<User | null>(null)
   const [activeTab, setActiveTab] = useState("dashboard")
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [stats, setStats] = useState<Estatisticas | null>(null)
+  const [refreshKey, setRefreshKey] = useState(0)
   const router = useRouter()
 
   useEffect(() => {
@@ -33,14 +36,38 @@ export default function DashboardPage() {
     }
   }, [router])
 
+  // Carregar estatísticas
+  useEffect(() => {
+    const fetchStats = async () => {
+      if (!user?.id) return
+
+      try {
+        const data = await historicoService.obterEstatisticas(Number(user.id))
+        setStats(data)
+      } catch (error) {
+        console.error('Erro ao carregar estatísticas:', error)
+      }
+    }
+
+    if (user) {
+      fetchStats()
+    }
+  }, [user, refreshKey])
+
   const handleLogout = () => {
     localStorage.removeItem("user")
     router.push("/")
   }
 
+  const handleRefresh = () => {
+    setRefreshKey(prev => prev + 1)
+  }
+
   if (!user) {
     return null
   }
+
+  const usuarioId = Number(user.id)
 
   return (
     <div className="min-h-screen bg-secondary/30 flex">
@@ -83,23 +110,23 @@ export default function DashboardPage() {
               <div className="grid md:grid-cols-3 gap-6 mb-8">
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Vacinas em Dia</CardTitle>
+                    <CardTitle className="text-sm font-medium">Vacinas Aplicadas</CardTitle>
                     <CheckCircle2 className="h-4 w-4 text-accent" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">8</div>
-                    <p className="text-xs text-muted-foreground">Todas as doses aplicadas</p>
+                    <div className="text-2xl font-bold">{stats?.doses_aplicadas ?? 0}</div>
+                    <p className="text-xs text-muted-foreground">Doses completas</p>
                   </CardContent>
                 </Card>
 
                 <Card>
                   <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                    <CardTitle className="text-sm font-medium">Próximas Vacinas</CardTitle>
+                    <CardTitle className="text-sm font-medium">Pendentes</CardTitle>
                     <Clock className="h-4 w-4 text-primary" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">2</div>
-                    <p className="text-xs text-muted-foreground">Agendadas para este mês</p>
+                    <div className="text-2xl font-bold">{stats?.doses_pendentes ?? 0}</div>
+                    <p className="text-xs text-muted-foreground">Agendadas</p>
                   </CardContent>
                 </Card>
 
@@ -109,8 +136,8 @@ export default function DashboardPage() {
                     <AlertCircle className="h-4 w-4 text-destructive" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">0</div>
-                    <p className="text-xs text-muted-foreground">Nenhuma vacina atrasada</p>
+                    <div className="text-2xl font-bold">{stats?.doses_atrasadas ?? 0}</div>
+                    <p className="text-xs text-muted-foreground">Doses atrasadas</p>
                   </CardContent>
                 </Card>
               </div>
@@ -128,7 +155,7 @@ export default function DashboardPage() {
                       <CardDescription>Histórico e próximas doses programadas</CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <VaccineList />
+                      <VaccineList usuarioId={usuarioId} key={refreshKey} />
                     </CardContent>
                   </Card>
                 </div>
@@ -160,9 +187,8 @@ export default function DashboardPage() {
                 <p className="text-muted-foreground">Agende uma nova vacina de forma rápida e fácil.</p>
               </div>
               <VaccineScheduleForm
-                onSchedule={(data) => {
-                  console.log("[v0] New vaccine scheduled:", data)
-                }}
+                usuarioId={usuarioId}
+                onSchedule={handleRefresh}
               />
             </div>
           )}
@@ -181,7 +207,7 @@ export default function DashboardPage() {
                   <CardDescription>Histórico completo de doses aplicadas e agendadas</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <VaccineList />
+                  <VaccineList usuarioId={usuarioId} key={refreshKey} />
                 </CardContent>
               </Card>
             </>

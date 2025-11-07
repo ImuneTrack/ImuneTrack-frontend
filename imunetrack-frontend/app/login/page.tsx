@@ -1,7 +1,6 @@
 "use client"
 
 import type React from "react"
-
 import { useState } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
@@ -9,49 +8,64 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Shield, ArrowLeft } from "lucide-react"
+import { Shield, ArrowLeft, AlertCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { Toaster } from "@/components/ui/toaster"
+import { authService } from "@/services/api"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState("")
   const router = useRouter()
   const { toast } = useToast()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsLoading(true)
+    setError("")
 
-    // Simulate authentication
-    setTimeout(() => {
-      if (email && password) {
-        // Store user session in localStorage
-        const user = {
-          email,
-          name: email.split("@")[0],
-          id: Math.random().toString(36).substr(2, 9),
-        }
-        localStorage.setItem("user", JSON.stringify(user))
+    // Validações básicas
+    if (!email || !password) {
+      setError("Por favor, preencha todos os campos")
+      setIsLoading(false)
+      return
+    }
 
-        toast({
-          title: "Login realizado com sucesso!",
-          description: "Redirecionando para o dashboard...",
-        })
+    if (!email.includes('@')) {
+      setError("Por favor, insira um email válido")
+      setIsLoading(false)
+      return
+    }
 
-        setTimeout(() => {
-          router.push("/dashboard")
-        }, 1000)
-      } else {
-        toast({
-          title: "Erro no login",
-          description: "Por favor, preencha todos os campos.",
-          variant: "destructive",
-        })
-        setIsLoading(false)
-      }
-    }, 1000)
+    try {
+      // Faz login na API
+      await authService.login(email, password)
+
+      toast({
+        title: "Login realizado com sucesso!",
+        description: "Redirecionando para o dashboard...",
+      })
+
+      // Redireciona após 1 segundo
+      setTimeout(() => {
+        router.push("/dashboard")
+      }, 1000)
+    } catch (error: any) {
+      console.error('Erro no login:', error)
+      
+      const errorMessage = error.message || "Email ou senha incorretos. Tente novamente."
+      setError(errorMessage)
+      
+      toast({
+        title: "Erro no login",
+        description: errorMessage,
+        variant: "destructive",
+      })
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
@@ -72,6 +86,16 @@ export default function LoginPage() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleLogin} className="space-y-4">
+              {/* Mensagem de erro */}
+              {error && (
+                <div className="flex items-start gap-3 p-4 rounded-lg bg-destructive/10 border border-destructive/20">
+                  <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+                  <div className="flex-1">
+                    <p className="text-sm text-destructive">{error}</p>
+                  </div>
+                </div>
+              )}
+
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -79,10 +103,16 @@ export default function LoginPage() {
                   type="email"
                   placeholder="seu@email.com"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value)
+                    setError("")
+                  }}
                   required
+                  disabled={isLoading}
+                  autoComplete="email"
                 />
               </div>
+
               <div className="space-y-2">
                 <Label htmlFor="password">Senha</Label>
                 <Input
@@ -90,12 +120,26 @@ export default function LoginPage() {
                   type="password"
                   placeholder="••••••••"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value)
+                    setError("")
+                  }}
                   required
+                  disabled={isLoading}
+                  autoComplete="current-password"
+                  minLength={6}
                 />
               </div>
+
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Entrando..." : "Entrar"}
+                {isLoading ? (
+                  <>
+                    <span className="animate-spin mr-2">⏳</span>
+                    Entrando...
+                  </>
+                ) : (
+                  "Entrar"
+                )}
               </Button>
             </form>
           </CardContent>
@@ -107,6 +151,15 @@ export default function LoginPage() {
               </Link>
             </div>
           </CardFooter>
+        </Card>
+
+        {/* Info para teste */}
+        <Card className="bg-muted/50">
+          <CardContent className="pt-6">
+            <p className="text-xs text-muted-foreground text-center">
+              💡 Dica: Use suas credenciais cadastradas no sistema ou crie uma nova conta
+            </p>
+          </CardContent>
         </Card>
       </div>
       <Toaster />

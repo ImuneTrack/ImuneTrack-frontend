@@ -1,70 +1,110 @@
 "use client"
 
-import type React from "react"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Calendar, AlertCircle } from "lucide-react"
-
-interface VaccineFormData {
-  vaccine: string
-  date: string
-  location: string
-  notes: string
-}
+import { Calendar, AlertCircle, Loader2 } from "lucide-react"
+import { vacinaService, historicoService, type Vacina } from "@/services/api"
 
 interface VaccineScheduleFormProps {
-  onSchedule?: (data: VaccineFormData) => void
+  usuarioId: number;
+  onSchedule?: () => void;
 }
 
-const availableVaccines = [
-  "Hepatite B",
-  "Tríplice Viral (Sarampo, Caxumba, Rubéola)",
-  "Febre Amarela",
-  "dT (Dupla Adulto)",
-  "Influenza (Gripe)",
-  "COVID-19",
-  "Pneumocócica",
-  "Herpes Zóster",
-  "Meningocócica",
-  "HPV",
-]
-
-export function VaccineScheduleForm({ onSchedule }: VaccineScheduleFormProps) {
-  const [formData, setFormData] = useState<VaccineFormData>({
-    vaccine: "",
-    date: "",
-    location: "",
-    notes: "",
-  })
+export function VaccineScheduleForm({ usuarioId, onSchedule }: VaccineScheduleFormProps) {
+  const [vaccines, setVaccines] = useState<Vacina[]>([])
+  const [loading, setLoading] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  
+  const [formData, setFormData] = useState({
+    vacina_id: '',
+    numero_dose: '1',
+    data_prevista: '',
+    local_aplicacao: '',
+    observacoes: '',
+  })
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Carregar vacinas disponíveis
+  useEffect(() => {
+    const fetchVaccines = async () => {
+      try {
+        setLoading(true)
+        const data = await vacinaService.listarTodas()
+        setVaccines(data)
+      } catch (err) {
+        console.error('Erro ao buscar vacinas:', err)
+        setError('Erro ao carregar vacinas disponíveis')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchVaccines()
+  }, [])
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
-    if (!formData.vaccine || !formData.date || !formData.location) {
-      alert("Por favor, preencha todos os campos obrigatórios")
+    if (!formData.vacina_id || !formData.data_prevista) {
+      setError('Por favor, preencha todos os campos obrigatórios')
       return
     }
 
-    console.log("[v0] Vaccine scheduled:", formData)
-    setSubmitted(true)
-    onSchedule?.(formData)
+    try {
+      setSubmitting(true)
+      setError(null)
 
-    // Reset form after 2 seconds
-    setTimeout(() => {
-      setFormData({ vaccine: "", date: "", location: "", notes: "" })
-      setSubmitted(false)
-    }, 2000)
+      await historicoService.criar(usuarioId, {
+        vacina_id: parseInt(formData.vacina_id),
+        numero_dose: parseInt(formData.numero_dose),
+        status: 'pendente',
+        data_prevista: formData.data_prevista,
+        local_aplicacao: formData.local_aplicacao || undefined,
+        observacoes: formData.observacoes || undefined,
+      })
+
+      setSubmitted(true)
+      onSchedule?.()
+
+      // Reset form após 2 segundos
+      setTimeout(() => {
+        setFormData({
+          vacina_id: '',
+          numero_dose: '1',
+          data_prevista: '',
+          local_aplicacao: '',
+          observacoes: '',
+        })
+        setSubmitted(false)
+      }, 2000)
+    } catch (err: any) {
+      console.error('Erro ao agendar vacina:', err)
+      setError(err.response?.data?.detail || 'Erro ao agendar vacina. Tente novamente.')
+    } finally {
+      setSubmitting(false)
+    }
   }
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }))
+    setFormData((prev) => ({ ...prev, [name]: value }))
+  }
+
+  const selectedVaccine = vaccines.find(v => v.id === parseInt(formData.vacina_id))
+
+  if (loading) {
+    return (
+      <Card>
+        <CardContent className="flex items-center justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="ml-2 text-muted-foreground">Carregando...</span>
+        </CardContent>
+      </Card>
+    )
   }
 
   return (
@@ -83,56 +123,87 @@ export function VaccineScheduleForm({ onSchedule }: VaccineScheduleFormProps) {
             <div>
               <p className="font-medium text-accent">Vacina agendada com sucesso!</p>
               <p className="text-sm text-muted-foreground mt-1">
-                Você receberá uma confirmação no seu email. Não perca a data!
+                Você receberá uma notificação próximo à data agendada.
               </p>
             </div>
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
+            {error && (
+              <div className="flex items-start gap-3 p-4 rounded-lg bg-destructive/10 border border-destructive">
+                <AlertCircle className="h-5 w-5 text-destructive flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-destructive">{error}</p>
+              </div>
+            )}
+
             {/* Vaccine Selection */}
             <div>
               <label className="text-sm font-medium mb-2 block">
                 Selecione a Vacina <span className="text-destructive">*</span>
               </label>
               <select
-                name="vaccine"
-                value={formData.vaccine}
+                name="vacina_id"
+                value={formData.vacina_id}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                required
               >
                 <option value="">-- Escolha uma vacina --</option>
-                {availableVaccines.map((vaccine) => (
-                  <option key={vaccine} value={vaccine}>
-                    {vaccine}
+                {vaccines.map((vaccine) => (
+                  <option key={vaccine.id} value={vaccine.id}>
+                    {vaccine.nome} ({vaccine.doses} dose{vaccine.doses > 1 ? 's' : ''})
                   </option>
                 ))}
               </select>
             </div>
 
+            {/* Dose Number */}
+            {selectedVaccine && (
+              <div>
+                <label className="text-sm font-medium mb-2 block">
+                  Número da Dose <span className="text-destructive">*</span>
+                </label>
+                <select
+                  name="numero_dose"
+                  value={formData.numero_dose}
+                  onChange={handleChange}
+                  className="w-full px-3 py-2 border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                  required
+                >
+                  {Array.from({ length: selectedVaccine.doses }, (_, i) => i + 1).map((num) => (
+                    <option key={num} value={num}>
+                      Dose {num}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             {/* Date Selection */}
             <div>
               <label className="text-sm font-medium mb-2 block">
-                Data do Agendamento <span className="text-destructive">*</span>
+                Data Prevista <span className="text-destructive">*</span>
               </label>
               <input
                 type="date"
-                name="date"
-                value={formData.date}
+                name="data_prevista"
+                value={formData.data_prevista}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
+                required
               />
             </div>
 
             {/* Location Selection */}
             <div>
               <label className="text-sm font-medium mb-2 block">
-                Local do Agendamento <span className="text-destructive">*</span>
+                Local do Agendamento
               </label>
               <input
                 type="text"
-                name="location"
+                name="local_aplicacao"
                 placeholder="Ex: Clínica XYZ, Posto de Saúde, etc..."
-                value={formData.location}
+                value={formData.local_aplicacao}
                 onChange={handleChange}
                 className="w-full px-3 py-2 border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary"
               />
@@ -142,9 +213,9 @@ export function VaccineScheduleForm({ onSchedule }: VaccineScheduleFormProps) {
             <div>
               <label className="text-sm font-medium mb-2 block">Observações (Opcional)</label>
               <textarea
-                name="notes"
+                name="observacoes"
                 placeholder="Adicione qualquer informação importante..."
-                value={formData.notes}
+                value={formData.observacoes}
                 onChange={handleChange}
                 rows={3}
                 className="w-full px-3 py-2 border rounded-lg bg-background focus:outline-none focus:ring-2 focus:ring-primary resize-none"
@@ -152,9 +223,18 @@ export function VaccineScheduleForm({ onSchedule }: VaccineScheduleFormProps) {
             </div>
 
             {/* Submit Button */}
-            <Button type="submit" className="w-full gap-2">
-              <Calendar className="h-4 w-4" />
-              Confirmar Agendamento
+            <Button type="submit" className="w-full gap-2" disabled={submitting}>
+              {submitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Agendando...
+                </>
+              ) : (
+                <>
+                  <Calendar className="h-4 w-4" />
+                  Confirmar Agendamento
+                </>
+              )}
             </Button>
           </form>
         )}
