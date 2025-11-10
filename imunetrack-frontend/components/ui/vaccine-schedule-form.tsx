@@ -60,7 +60,7 @@ export function VaccineScheduleForm({ usuarioId, onSchedule }: VaccineScheduleFo
         vacina_id: parseInt(formData.vacina_id),
         numero_dose: parseInt(formData.numero_dose),
         status: 'pendente',
-        data_prevista: formData.data_prevista,
+        data_prevista: formData.data_prevista || undefined,
         local_aplicacao: formData.local_aplicacao || undefined,
         observacoes: formData.observacoes || undefined,
       })
