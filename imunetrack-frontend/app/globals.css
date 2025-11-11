@@ -129,3 +129,23 @@
     @apply bg-background text-foreground;
   }
 }
+
+:root {
+  --font-size-base: 16px;
+}
+
+.font-sm {
+  --font-size-base: 14px;
+}
+
+.font-base {
+  --font-size-base: 16px;
+}
+
+.font-lg {
+  --font-size-base: 18px;
+}
+
+html {
+  font-size: var(--font-size-base);
+}

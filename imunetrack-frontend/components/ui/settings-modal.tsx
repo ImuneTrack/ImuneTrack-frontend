@@ -1,8 +1,7 @@
 "use client"
 
 import type React from "react"
-
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -15,10 +14,23 @@ interface SettingsModalProps {
   isOpen: boolean
   onClose: () => void
   user?: { name: string; email: string }
+  currentTheme?: "light" | "dark" | "auto"
+  onThemeChange?: (theme: "light" | "dark" | "auto") => void
+  currentFontSize?: "sm" | "base" | "lg"
+  onFontSizeChange?: (size: "sm" | "base" | "lg") => void
 }
 
-export function SettingsModal({ isOpen, onClose, user }: SettingsModalProps) {
+export function SettingsModal({
+  isOpen,
+  onClose,
+  user,
+  currentTheme = "auto",
+  currentFontSize = "base",
+  onThemeChange,
+  onFontSizeChange,
+}: SettingsModalProps) {
   const [theme, setTheme] = useState<"light" | "dark" | "auto">("auto")
+  const [fontSize, setFontSize] = useState<"sm" | "base" | "lg">("base")
   const [formData, setFormData] = useState({
     name: user?.name || "",
     email: user?.email || "",
@@ -26,9 +38,55 @@ export function SettingsModal({ isOpen, onClose, user }: SettingsModalProps) {
     birthDate: "",
   })
 
+  const applyFontSize = (size: "sm" | "base" | "lg") => {
+    // Remove classes anteriores
+    document.documentElement.classList.remove("font-sm", "font-base", "font-lg")
+    // Adiciona a nova classe
+    document.documentElement.classList.add(`font-${size}`)
+  }
+
+  useEffect(() => {
+    const savedFontSize = localStorage.getItem("fontSize") as "sm" | "base" | "lg"
+    if (savedFontSize) {
+      setFontSize(savedFontSize)
+      applyFontSize(savedFontSize)
+    }
+  }, [])
+
+  useEffect(() => {
+  const savedTheme = localStorage.getItem("theme") as "light" | "dark" | "auto"
+  if (savedTheme) {
+    setTheme(savedTheme)
+    handleThemeChange(savedTheme)
+  }
+}, [])
+
+  useEffect(() => {
+    setFontSize(currentFontSize)
+  }, [currentFontSize])
+
   const handleThemeChange = (newTheme: "light" | "dark" | "auto") => {
     setTheme(newTheme)
     localStorage.setItem("theme", newTheme)
+    
+    // Aplicar o tema no documento
+    if (newTheme === "dark") {
+      document.documentElement.classList.add("dark")
+    } else if (newTheme === "light") {
+      document.documentElement.classList.remove("dark")
+    } else {
+      // Automático - detectar preferência do sistema
+      const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches
+      document.documentElement.classList.toggle("dark", isDark)
+    }
+    
+    onThemeChange?.(newTheme)
+  }
+
+  const handleFontChange = (size: "sm" | "base" | "lg") => {
+    setFontSize(size)
+    localStorage.setItem("fontSize", size)
+    applyFontSize(size)
   }
 
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -84,7 +142,7 @@ export function SettingsModal({ isOpen, onClose, user }: SettingsModalProps) {
                       name="theme"
                       value="light"
                       checked={theme === "light"}
-                      onChange={(e) => handleThemeChange(e.target.value as "light")}
+                      onChange={(e) => handleThemeChange("light")}
                       className="cursor-pointer"
                     />
                     <span>Claro</span>
@@ -95,7 +153,7 @@ export function SettingsModal({ isOpen, onClose, user }: SettingsModalProps) {
                       name="theme"
                       value="dark"
                       checked={theme === "dark"}
-                      onChange={(e) => handleThemeChange(e.target.value as "dark")}
+                      onChange={(e) => handleThemeChange("dark")}
                       className="cursor-pointer"
                     />
                     <span>Escuro</span>
@@ -106,7 +164,7 @@ export function SettingsModal({ isOpen, onClose, user }: SettingsModalProps) {
                       name="theme"
                       value="auto"
                       checked={theme === "auto"}
-                      onChange={(e) => handleThemeChange(e.target.value as "auto")}
+                      onChange={(e) => handleThemeChange("auto")}
                       className="cursor-pointer"
                     />
                     <span>Automático (conforme sistema)</span>
@@ -122,13 +180,25 @@ export function SettingsModal({ isOpen, onClose, user }: SettingsModalProps) {
               </CardHeader>
               <CardContent className="space-y-2">
                 <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
+                  <Button
+                    variant={fontSize === "sm" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleFontChange("sm")}
+                  >
                     A
                   </Button>
-                  <Button variant="outline" size="sm" className="text-base bg-transparent">
+                  <Button
+                    variant={fontSize === "base" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleFontChange("base")}
+                  >
                     A
                   </Button>
-                  <Button variant="outline" size="sm" className="text-lg bg-transparent">
+                  <Button
+                    variant={fontSize === "lg" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => handleFontChange("lg")}
+                  >
                     A
                   </Button>
                 </div>
