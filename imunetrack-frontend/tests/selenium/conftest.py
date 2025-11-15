@@ -234,7 +234,7 @@ def get_browser_options(browser):
         options.add_argument("--log-level=3")
         options.add_experimental_option('excludeSwitches', ['enable-logging'])
         return options
-        
+    
     elif browser == "firefox":
         options = FirefoxOptions()
         if headless:

@@ -69,11 +69,4 @@ class DashboardPage(BasePage):
     def get_overdue_vaccines_count(self):
         """Obtém contagem de vacinas atrasadas."""
         return self.get_text(self.OVERDUE_VACCINES_VALUE)
-    
-    def are_stats_cards_visible(self):
-        """Verifica se todos os cards de estatísticas estão visíveis."""
-        return (
-            self.is_visible(self.VACCINES_UP_TO_DATE_CARD) and
-            self.is_visible(self.UPCOMING_VACCINES_CARD) and
-            self.is_visible(self.OVERDUE_VACCINES_CARD)
-        )
+

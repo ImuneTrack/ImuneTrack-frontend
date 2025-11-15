@@ -1,0 +1,104 @@
+name: Selenium E2E Tests
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+jobs:
+  selenium-tests:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        browser: [chrome, firefox]
+
+    steps:
+      - name: Checkout frontend
+        uses: actions/checkout@v3
+
+      - name: Subir backend via Docker Compose
+        run: |
+          git clone https://github.com/SEUUSER/backend.git backend
+          cd backend
+          docker compose up -d backend db
+          # esperar backend e DB estarem prontos
+          timeout 60 bash -c 'until curl -f http://localhost:8000; do sleep 2; done'
+
+      - name: Subir auth via Docker Compose
+        run: |
+          git clone https://github.com/SEUUSER/auth.git auth
+          cd auth
+          docker compose up -d auth db
+          # esperar auth e DB estarem prontos
+          timeout 60 bash -c 'until curl -f http://localhost:8001; do sleep 2; done'
+
+      - name: Subir frontend
+        run: |
+          cd front
+          npm install
+          nohup npm run dev >/dev/null 2>&1 &
+
+      - name: Esperar frontend
+        run: |
+          timeout 60 bash -c 'until curl -f http://localhost:3000; do sleep 2; done'
+
+      - name: Configurar Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Instalar dependências Python
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r tests/selenium/requirements.txt
+
+      - name: Instalar Chrome
+        if: matrix.browser == 'chrome'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y wget gnupg2
+          wget -q -O - https://dl.google.com/linux/linux_signing_key.pub | sudo apt-key add -
+          echo "deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main" | sudo tee /etc/apt/sources.list.d/google.list
+          sudo apt-get update
+          sudo apt-get install -y google-chrome-stable chromium-chromedriver
+
+      - name: Instalar Firefox + GeckoDriver
+        if: matrix.browser == 'firefox'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y firefox geckodriver
+
+      - name: Criar pastas de relatório
+        run: |
+          mkdir -p reports/screenshots
+          mkdir -p reports/html
+
+      - name: Executar testes Selenium
+        env:
+          BROWSER: ${{ matrix.browser }}
+          HEADLESS: true
+          BASE_URL: http://localhost:3000
+          API_URL: http://localhost:8000
+          AUTH_URL: http://localhost:8001
+        run: |
+          pytest tests/selenium/tests/ -v \
+            --html=reports/html/report_${{ matrix.browser }}.html \
+            --self-contained-html
+
+      - name: Upload screenshots (em caso de falha)
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: screenshots-${{ matrix.browser }}
+          path: reports/screenshots/
+
+      - name: Upload relatório HTML
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-report-${{ matrix.browser }}
+          path: reports/html/

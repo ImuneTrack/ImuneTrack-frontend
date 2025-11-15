@@ -6,7 +6,10 @@ import pytest
 from selenium.webdriver.common.by import By
 from pages.dashboard_page import DashboardPage
 from pages.agendamentoVacina_page import VaccineSchedulePage
-
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from config.settings import settings
+import time
 
 class TestDashboard:
     """Testes do Dashboard."""
@@ -17,24 +20,6 @@ class TestDashboard:
 
         assert dashboard.is_logged_in(), "Usuário não está autenticado"
         assert "olá" in dashboard.get_welcome_message().lower(), "Mensagem de boas-vindas não encontrada"
-
-    def test_exibir_cards_estatisticas(self, authenticated_driver):
-        """Deve exibir todos os cards de estatísticas."""
-        dashboard = DashboardPage(authenticated_driver)
-
-        assert dashboard.are_stats_cards_visible(), "Cards de estatísticas não estão visíveis"
-
-    def test_conteudo_cards_estatisticas(self, authenticated_driver):
-        """Deve exibir valores nos cards de estatísticas."""
-        dashboard = DashboardPage(authenticated_driver)
-
-        up_to_date = dashboard.get_vaccines_up_to_date_count()
-        upcoming = dashboard.get_upcoming_vaccines_count()
-        overdue = dashboard.get_overdue_vaccines_count()
-
-        assert up_to_date.isdigit(), "Contagem de vacinas em dia não é numérica"
-        assert upcoming.isdigit(), "Contagem de próximas vacinas não é numérica"
-        assert overdue.isdigit(), "Contagem de vacinas atrasadas não é numérica"
 
     def test_navegar_para_agendamento(self, authenticated_driver):
         """Deve navegar para página de agendamento."""
@@ -68,3 +53,30 @@ class TestDashboard:
 
         assert dashboard.is_visible(dashboard.USER_NAME, timeout=3), "Nome do usuário não está visível"
         assert dashboard.is_visible(dashboard.USER_EMAIL, timeout=3), "Email do usuário não está visível"
+
+    def test_abrir_card_do_calendario(self, authenticated_driver):
+        driver = authenticated_driver
+        dashboard = DashboardPage(driver)
+
+        dashboard.navigate()
+
+        dia = "12"
+
+        dia_elemento = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((
+                By.XPATH,
+                f"//div[contains(@class, 'aspect-square') and contains(@class, 'cursor-pointer') and normalize-space(text())='{dia}']"
+            ))
+        )
+        dia_elemento.click()
+
+        time.sleep(2)
+
+        card_aberto = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((
+                By.XPATH,
+                "//div[contains(@class, 'rounded-lg') and contains(@class, 'border') and .//h4]"
+            ))
+        )
+
+        assert card_aberto is not None

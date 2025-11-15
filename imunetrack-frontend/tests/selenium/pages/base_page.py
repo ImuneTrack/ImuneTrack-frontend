@@ -51,10 +51,8 @@ class BasePage:
         wait = WebDriverWait(self.driver, wait_time)
         element = wait.until(EC.element_to_be_clickable(locator))
         
-        # Scroll para elemento se necessário
         self.scroll_to_element(locator)
         
-        # Tenta clicar, se falhar usa JavaScript
         try:
             element.click()
         except Exception:

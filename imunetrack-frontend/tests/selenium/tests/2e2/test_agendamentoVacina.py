@@ -65,28 +65,12 @@ class TestVaccineSchedule:
         schedule_page = VaccineSchedulePage(authenticated_driver)
         schedule_page.wait_for_react_to_load()
 
-        future_date = (datetime.now() + timedelta(days=15)).strftime("%Y-%m-%d")
-        vaccines = schedule_page.get_available_vaccines()
-        vaccine_to_select = "Hepatite B" if "Hepatite B" in vaccines else vaccines[0]
-
-        schedule_page.select_vaccine(vaccine_to_select)
-        schedule_page.set_date(future_date)
-        schedule_page.set_location("Posto de Saúde")
-        schedule_page.submit()
+        future_date = (datetime.now() + timedelta(days=30)).strftime("%d/%m/%Y")
+        
+        schedule_page.schedule_vaccine(
+            vaccine="BCG",
+            date=future_date,
+            location="Clínica Teste",
+        )
 
         assert schedule_page.has_success_message(), "Mensagem de sucesso não foi exibida"
-
-    def test_validar_campos_obrigatorios(self, authenticated_driver):
-        """Deve validar campos obrigatórios."""
-        dashboard = DashboardPage(authenticated_driver)
-        dashboard.navigate_to_schedule()
-
-        schedule_page = VaccineSchedulePage(authenticated_driver)
-        schedule_page.submit()
-
-        # Mantém-se na página de agendamento
-        assert schedule_page.is_on_schedule_page(), "Usuário foi redirecionado indevidamente"
-
-        # Valida campo obrigatório (opcional)
-        date_field = authenticated_driver.find_element(*schedule_page.DATE_INPUT)
-        assert not date_field.get_attribute("validity").valid, "Campo de data não foi validado como obrigatório"

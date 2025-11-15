@@ -26,7 +26,6 @@ export default function LoginPage() {
     setIsLoading(true)
     setError("")
 
-    // Validações básicas
     if (!email || !password) {
       setError("Por favor, preencha todos os campos")
       setIsLoading(false)
@@ -40,16 +39,15 @@ export default function LoginPage() {
     }
 
     try {
-      // Faz login na API
       const usuario = await authService.login(email, password)
 
       localStorage.setItem(
         "user",
         JSON.stringify({
         id: usuario.id,
-        name: usuario.nome,      // ou usuario.name se o backend devolver assim
+        name: usuario.nome,
         email: usuario.email,
-        isAdmin: usuario.is_admin // <- aqui vem do backend
+        isAdmin: usuario.is_admin
         })
       )
 
@@ -58,10 +56,8 @@ export default function LoginPage() {
         description: "Redirecionando para o dashboard...",
       })
 
-      // Redireciona após 1 segundo
-      setTimeout(() => {
-        router.push("/dashboard")
-      }, 1000)
+    router.push("/dashboard")
+    
     } catch (error: any) {
       console.error('Erro no login:', error)
       
@@ -115,7 +111,6 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => {
                     setEmail(e.target.value)
-                    setError("")
                   }}
                   required
                   disabled={isLoading}
@@ -132,7 +127,6 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => {
                     setPassword(e.target.value)
-                    setError("")
                   }}
                   required
                   disabled={isLoading}

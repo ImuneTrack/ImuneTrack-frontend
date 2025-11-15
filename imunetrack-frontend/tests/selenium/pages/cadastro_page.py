@@ -4,6 +4,8 @@ Page Object para a página de Cadastro.
 
 from selenium.webdriver.common.by import By
 from pages.base_page import BasePage
+from selenium.webdriver.support.ui import WebDriverWait, Select
+from selenium.webdriver.support import expected_conditions as EC
 
 
 class CadastroPage(BasePage):
@@ -17,7 +19,7 @@ class CadastroPage(BasePage):
     SIGNUP_BUTTON = (By.XPATH, "//button[contains(text(), 'Criar conta')]")
     SUCCESS_MESSAGE = (By.XPATH, "//*[contains(text(), 'Conta criada com sucesso')]")
     ERROR_MESSAGE = (By.XPATH, "//*[contains(@class, 'destructive')]")
-    LOGIN_LINK = (By.XPATH, "//a[contains(text(), 'Fazer login')]")
+    LOGIN_LINK = (By.CSS_SELECTOR, 'a[href="/login"]')
     
     def navigate(self):
         """Navega para a página de cadastro."""
@@ -40,5 +42,8 @@ class CadastroPage(BasePage):
         return self.get_text(self.ERROR_MESSAGE)
     
     def click_login_link(self):
-        """Clica no link de login."""
-        self.click(self.LOGIN_LINK)
+        elem = WebDriverWait(self.driver, 10).until(
+            EC.element_to_be_clickable(self.LOGIN_LINK)
+        )
+        self.driver.execute_script("arguments[0].scrollIntoView(true);", elem)
+        self.driver.execute_script("arguments[0].click();", elem)
