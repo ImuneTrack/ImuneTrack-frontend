@@ -16,23 +16,25 @@ jobs:
         browser: [chrome, firefox]
 
     steps:
-      - name: Checkout frontend
-        uses: actions/checkout@v3
+      - name: Clonar frontend
+        run: git clone https://github.com/ImuneTrack/ImuneTrack-frontend.git front
 
-      - name: Subir backend via Docker Compose
+      - name: Clonar backend
+        run: git clone https://github.com/ImuneTrack/ImuneTrack-backend.git backend
+
+      - name: Clonar auth
+        run: git clone https://github.com/ImuneTrack/ImuneTrack-auth.git auth
+
+      - name: Subir backend
         run: |
-          git clone https://github.com/SEUUSER/backend.git backend
           cd backend
           docker compose up -d backend db
-          # esperar backend e DB estarem prontos
           timeout 60 bash -c 'until curl -f http://localhost:8000; do sleep 2; done'
 
-      - name: Subir auth via Docker Compose
+      - name: Subir auth
         run: |
-          git clone https://github.com/SEUUSER/auth.git auth
           cd auth
           docker compose up -d auth db
-          # esperar auth e DB estarem prontos
           timeout 60 bash -c 'until curl -f http://localhost:8001; do sleep 2; done'
 
       - name: Subir frontend
