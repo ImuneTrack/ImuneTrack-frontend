@@ -1,0 +1,23 @@
+{
+  "build": {
+    "builder": "NIXPACKS",
+    "nixpacks": {
+      "plan": {
+        "phases": {
+          "setup": {
+            "nixPkgs": ["nodejs_20", "coreutils"]
+          },
+          "install": {
+            "cmds": ["npm install --force"]
+          },
+          "build": {
+            "cmds": ["npm run build"]
+          },
+          "start": {
+            "cmd": "npm run start -- -p $PORT"
+          }
+        }
+      }
+    }
+  }
+}
