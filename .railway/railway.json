@@ -11,7 +11,9 @@
             "cmds": ["npm install --force"]
           },
           "build": {
-            "cmds": ["npm run build"]
+            "cmds": [
+              "NEXT_PUBLIC_BACKEND_URL=$NEXT_PUBLIC_BACKEND_URL NEXT_PUBLIC_AUTH_URL=$NEXT_PUBLIC_AUTH_URL npm run build"
+            ]
           },
           "start": {
             "cmd": "npm run start -- -p $PORT"
