@@ -6,7 +6,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Palette, User } from "lucide-react"
 
@@ -18,6 +17,7 @@ interface SettingsModalProps {
   onThemeChange?: (theme: "light" | "dark" | "auto") => void
   currentFontSize?: "sm" | "base" | "lg"
   onFontSizeChange?: (size: "sm" | "base" | "lg") => void
+  initialTab?: "appearance"
 }
 
 export function SettingsModal({
@@ -28,20 +28,23 @@ export function SettingsModal({
   currentFontSize = "base",
   onThemeChange,
   onFontSizeChange,
+  initialTab = "appearance",
 }: SettingsModalProps) {
   const [theme, setTheme] = useState<"light" | "dark" | "auto">("auto")
   const [fontSize, setFontSize] = useState<"sm" | "base" | "lg">("base")
+  const [activeTab, setActiveTab] = useState<"appearance">("appearance")
   const [formData, setFormData] = useState({
     name: user?.name || "",
     email: user?.email || "",
-    phone: "",
-    birthDate: "",
+    password: "",
   })
 
+  useEffect(() => {
+    if (isOpen) setActiveTab(initialTab)
+  }, [isOpen, initialTab])
+
   const applyFontSize = (size: "sm" | "base" | "lg") => {
-    // Remove classes anteriores
     document.documentElement.classList.remove("font-sm", "font-base", "font-lg")
-    // Adiciona a nova classe
     document.documentElement.classList.add(`font-${size}`)
   }
 
@@ -54,32 +57,22 @@ export function SettingsModal({
   }, [])
 
   useEffect(() => {
-  const savedTheme = localStorage.getItem("theme") as "light" | "dark" | "auto"
-  if (savedTheme) {
-    setTheme(savedTheme)
-    handleThemeChange(savedTheme)
-  }
-}, [])
-
-  useEffect(() => {
-    setFontSize(currentFontSize)
-  }, [currentFontSize])
+    const savedTheme = localStorage.getItem("theme") as "light" | "dark" | "auto"
+    if (savedTheme) {
+      setTheme(savedTheme)
+      handleThemeChange(savedTheme)
+    }
+  }, [])
 
   const handleThemeChange = (newTheme: "light" | "dark" | "auto") => {
     setTheme(newTheme)
     localStorage.setItem("theme", newTheme)
-    
-    // Aplicar o tema no documento
-    if (newTheme === "dark") {
-      document.documentElement.classList.add("dark")
-    } else if (newTheme === "light") {
-      document.documentElement.classList.remove("dark")
-    } else {
-      // Automático - detectar preferência do sistema
+    if (newTheme === "dark") document.documentElement.classList.add("dark")
+    else if (newTheme === "light") document.documentElement.classList.remove("dark")
+    else {
       const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches
       document.documentElement.classList.toggle("dark", isDark)
     }
-    
     onThemeChange?.(newTheme)
   }
 
@@ -87,11 +80,12 @@ export function SettingsModal({
     setFontSize(size)
     localStorage.setItem("fontSize", size)
     applyFontSize(size)
+    onFontSizeChange?.(size)
   }
 
   const handleProfileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
-    setFormData((prev) => ({ ...prev, [name]: value }))
+    setFormData(prev => ({ ...prev, [name]: value }))
   }
 
   const handleProfileSave = () => {
@@ -100,8 +94,7 @@ export function SettingsModal({
         ...user,
         name: formData.name,
         email: formData.email,
-        phone: formData.phone,
-        birthDate: formData.birthDate,
+        password: formData.password,
       }
       localStorage.setItem("user", JSON.stringify(updatedUser))
     }
@@ -110,167 +103,77 @@ export function SettingsModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md bg-background/90 backdrop-blur-xl data-[state=open]:animate-in data-[state=open]:fade-in-0">
         <DialogHeader>
-          <DialogTitle>Configurações</DialogTitle>
+          <DialogTitle className="text-xl font-semibold text-center">Configurações</DialogTitle>
         </DialogHeader>
 
-        <Tabs defaultValue="appearance" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="appearance" className="gap-2">
-              <Palette className="h-4 w-4" />
-              <span className="hidden sm:inline">Aparência</span>
-            </TabsTrigger>
-            <TabsTrigger value="profile" className="gap-2">
-              <User className="h-4 w-4" />
-              <span className="hidden sm:inline">Perfil</span>
+        <Tabs value={activeTab} onValueChange={(v: any) => setActiveTab(v)} className="w-full">
+          <TabsList className="grid grid-cols-1 w-full rounded-xl bg-white/10 dark:bg-black/20 p-1">
+            <TabsTrigger
+              value="appearance"
+              className="rounded-lg data-[state=active]:bg-gradient-to-r data-[state=active]:from-[#45B88D] data-[state=active]:to-[#3DA87F] data-[state=active]:text-white"
+            >
+              <Palette className="h-4 w-4 mr-1" /> Aparência
             </TabsTrigger>
           </TabsList>
 
-          {/* Appearance Tab */}
-          <TabsContent value="appearance" className="space-y-4">
-            <Card>
+          <TabsContent value="appearance" className="space-y-4 mt-4">
+            {/* Tema */}
+            <Card className="bg-white/10 dark:bg-black/20 backdrop-blur-xl border-white/20 dark:border-neutral-700/30 shadow-lg rounded-xl">
               <CardHeader>
-                <CardTitle className="text-base">Tema</CardTitle>
-                <CardDescription>Escolha o tema da aplicação</CardDescription>
+                <CardTitle>Tema</CardTitle>
+                <CardDescription>Escolha como o app será exibido</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-3 cursor-pointer">
+                {["light", "dark", "auto"].map(mode => (
+                  <Label key={mode} className="flex gap-3 cursor-pointer">
                     <input
                       type="radio"
                       name="theme"
-                      value="light"
-                      checked={theme === "light"}
-                      onChange={(e) => handleThemeChange("light")}
-                      className="cursor-pointer"
+                      value={mode}
+                      checked={theme === mode}
+                      onChange={() => handleThemeChange(mode as any)}
                     />
-                    <span>Claro</span>
+                    <span className="capitalize">{mode}</span>
                   </Label>
-                  <Label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="theme"
-                      value="dark"
-                      checked={theme === "dark"}
-                      onChange={(e) => handleThemeChange("dark")}
-                      className="cursor-pointer"
-                    />
-                    <span>Escuro</span>
-                  </Label>
-                  <Label className="flex items-center gap-3 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="theme"
-                      value="auto"
-                      checked={theme === "auto"}
-                      onChange={(e) => handleThemeChange("auto")}
-                      className="cursor-pointer"
-                    />
-                    <span>Automático (conforme sistema)</span>
-                  </Label>
-                </div>
+                ))}
               </CardContent>
             </Card>
 
-            <Card>
+            {/* Tamanho da Fonte */}
+            <Card className="bg-white/10 dark:bg-black/20 backdrop-blur-xl border-white/20 dark:border-neutral-700/30 shadow-lg rounded-xl">
               <CardHeader>
-                <CardTitle className="text-base">Fonte</CardTitle>
-                <CardDescription>Tamanho de fonte padrão</CardDescription>
+                <CardTitle>Tamanho da Fonte</CardTitle>
+                <CardDescription>Defina o tamanho do texto</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-2">
-                <div className="flex gap-2">
+              <CardContent className="flex gap-2">
+                {["sm", "base", "lg"].map(size => (
                   <Button
-                    variant={fontSize === "sm" ? "default" : "outline"}
+                    key={size}
                     size="sm"
-                    onClick={() => handleFontChange("sm")}
+                    onClick={() => handleFontChange(size as any)}
+                    className={`w-10 h-10 flex items-center justify-center font-bold
+                      ${
+                        fontSize === size
+                          ? "bg-gradient-to-r from-[#45B88D] to-[#3DA87F] text-white"
+                          : "bg-white/80 dark:bg-gray-700 text-gray-900 dark:text-white border border-gray-300 dark:border-gray-600"
+                      } transition-all duration-200`}
                   >
                     A
                   </Button>
-                  <Button
-                    variant={fontSize === "base" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => handleFontChange("base")}
-                  >
-                    A
-                  </Button>
-                  <Button
-                    variant={fontSize === "lg" ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => handleFontChange("lg")}
-                  >
-                    A
-                  </Button>
-                </div>
+                ))}
               </CardContent>
             </Card>
-          </TabsContent>
-
-          {/* Profile Tab */}
-          <TabsContent value="profile" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-base">Informações Pessoais</CardTitle>
-                <CardDescription>Atualize seus dados de perfil</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">Nome Completo</Label>
-                  <Input
-                    id="name"
-                    name="name"
-                    value={formData.name}
-                    onChange={handleProfileChange}
-                    placeholder="Seu nome"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
-                  <Input
-                    id="email"
-                    name="email"
-                    type="email"
-                    value={formData.email}
-                    onChange={handleProfileChange}
-                    placeholder="seu@email.com"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Telefone</Label>
-                  <Input
-                    id="phone"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleProfileChange}
-                    placeholder="(11) 99999-9999"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="birthDate">Data de Nascimento</Label>
-                  <Input
-                    id="birthDate"
-                    name="birthDate"
-                    type="date"
-                    value={formData.birthDate}
-                    onChange={handleProfileChange}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            <div className="flex gap-2">
-              <Button onClick={handleProfileSave} className="flex-1">
-                Salvar Alterações
-              </Button>
-              <Button onClick={onClose} variant="outline" className="flex-1 bg-transparent">
-                Cancelar
-              </Button>
-            </div>
           </TabsContent>
         </Tabs>
+
+        {/* Botão salvar */}
+        <div className="mt-4 flex justify-end">
+          <Button onClick={handleProfileSave} className="bg-[#45B88D] hover:bg-[#3DA87F] text-white">
+            Salvar
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   )

@@ -10,6 +10,25 @@ export const metadata: Metadata = {
   title: "Imunetrack - Seu Calendário de Vacinação",
   description: "Acompanhe seu calendário de vacinação e mantenha sua saúde em dia",
   generator: "v0.app",
+  icons: {
+    icon: [
+      {
+        url: "/logo.png",
+        sizes: "any",
+      },
+      {
+        url: "/favicon.ico",
+        sizes: "any",
+      },
+    ],
+    apple: [
+      {
+        url: "/logo.png",
+        sizes: "180x180",
+        type: "image/png",
+      },
+    ],
+  },
 }
 
 export default function RootLayout({
