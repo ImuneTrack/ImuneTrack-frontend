@@ -5,36 +5,13 @@ import Link from "next/link"
 import Image from "next/image"
 import { Button } from "@/components/ui/button"
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
-import { Power, Shield, Calendar, Users, CheckCircle2, ArrowRight, Sparkles } from "lucide-react"
+import { Calendar, Users, CheckCircle2 } from "lucide-react"
 
 export default function HomePage() {
-  const [stats, setStats] = useState({ users: 0, vaccines: 0 })
   const [isVisible, setIsVisible] = useState(false)
 
   useEffect(() => {
     setIsVisible(true)
-    const targetUsers = 1247
-    const targetVaccines = 8932
-    const duration = 2000
-    const steps = 60
-    const incrementUsers = targetUsers / steps
-    const incrementVaccines = targetVaccines / steps
-
-    let step = 0
-    const timer = setInterval(() => {
-      step++
-      if (step <= steps) {
-        setStats({
-          users: Math.floor(incrementUsers * step),
-          vaccines: Math.floor(incrementVaccines * step)
-        })
-      } else {
-        clearInterval(timer)
-        setStats({ users: targetUsers, vaccines: targetVaccines })
-      }
-    }, duration / steps)
-
-    return () => clearInterval(timer)
   }, [])
 
   return (
@@ -50,13 +27,13 @@ export default function HomePage() {
               Imunetrack
             </h1>
           </div>
+
           <Link href="/login">
             <Button 
               variant="outline" 
               size="sm" 
               className="gap-2 bg-transparent hover-scale border-teal-600 text-teal-700 hover:bg-teal-50 -mt-8"
             >
-              <Power className="h-4 w-4" />
               Entrar
             </Button>
           </Link>
@@ -67,19 +44,9 @@ export default function HomePage() {
       <section className="container mx-auto px-4 py-20 md:py-32">
         <div className="max-w-4xl mx-auto text-center space-y-8">
 
-          {/* Badge */}
-          <div 
-            className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-700 
-              bg-teal-100 text-teal-700 
-              ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}
-          >
-            <Sparkles className="h-4 w-4" />
-            <span>Mais de {stats.users.toLocaleString()} pessoas já confiam em nós</span>
-          </div>
-
           {/* Título */}
           <h2 
-            className={`text-5xl md:text-6xl font-bold leading-tight transition-all duration-700 delay-100 
+            className={`text-5xl md:text-6xl font-bold leading-tight transition-all duration-700 
             ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}
           >
             Mantenha sua{" "}
@@ -91,57 +58,29 @@ export default function HomePage() {
 
           {/* Subtítulo */}
           <p 
-            className={`text-xl text-gray-600 max-w-2xl mx-auto transition-all duration-700 delay-200 
+            className={`text-xl text-gray-600 max-w-2xl mx-auto transition-all duration-700 delay-100
               ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}
           >
             Acompanhe todas as vacinas necessárias para cada fase da vida. Receba lembretes e mantenha seu histórico sempre atualizado.
           </p>
 
-          {/* CTAs */}
+          {/* CTA */}
           <div 
-            className={`flex flex-col sm:flex-row gap-4 justify-center pt-4 transition-all duration-700 delay-300 
+            className={`flex justify-center pt-4 transition-all duration-700 delay-200 
             ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4'}`}
           >
             <Link href="/cadastro">
               <Button 
                 size="lg" 
-                className="group relative overflow-hidden hover-scale w-full sm:w-auto 
+                className="group relative overflow-hidden hover-scale 
                 bg-gradient-to-r from-green-500 via-teal-600 to-blue-500 text-white border-none"
               >
                 <span className="relative z-10 flex items-center justify-center gap-2">
                   Começar agora
-                  <ArrowRight className="h-5 w-5 group-hover:translate-x-1 transition-transform" />
                 </span>
                 <div className="absolute inset-0 opacity-0 group-hover:opacity-20 transition-opacity bg-white" />
               </Button>
             </Link>
-            
-            <Button 
-              size="lg" 
-              variant="outline" 
-              className="bg-transparent hover-scale w-full sm:w-auto border-teal-600 text-teal-700 hover:bg-teal-50"
-            >
-              Saiba mais
-            </Button>
-          </div>
-
-          {/* Stats */}
-          <div 
-            className={`grid grid-cols-2 gap-8 max-w-md mx-auto pt-12 transition-all duration-700 delay-400 
-            ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}
-          >
-            <div className="text-center">
-              <div className="text-4xl font-bold text-teal-600 mb-2">
-                {stats.users.toLocaleString()}+
-              </div>
-              <div className="text-sm text-gray-600">Usuários ativos</div>
-            </div>
-            <div className="text-center">
-              <div className="text-4xl font-bold text-green-600 mb-2">
-                {stats.vaccines.toLocaleString()}+
-              </div>
-              <div className="text-sm text-gray-600">Vacinas registradas</div>
-            </div>
           </div>
         </div>
       </section>
